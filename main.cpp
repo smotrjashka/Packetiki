@@ -1,5 +1,85 @@
 #include <iostream>
+#include <thread>
 #include "Utils.h"
+
+#include <mutex>
+#include <queue>
+
+std::queue<const std::vector<std::string>*> log_queue;
+std::queue<std::tuple<const std::vector<std::string>*, std::chrono::time_point<std::chrono::system_clock>, int>> file1_queue;
+std::queue<std::tuple<const std::vector<std::string>*, std::chrono::time_point<std::chrono::system_clock>, int>> file2_queue;
+
+std::mutex log_mutex;
+std::mutex file1_mutex;
+std::mutex file2_mutex;
+
+void log_thrd(){
+    //??? а что если мы батц и закрыли прогу?
+    while (true){
+        if (log_queue.empty()){
+            std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        } else {
+            if (log_mutex.try_lock()){
+                const std::vector<std::string>* pVec  = log_queue.front();
+                log_queue.pop();
+                log_mutex.unlock();
+                Utils::print_commands(pVec);
+            } else {
+                std::this_thread::sleep_for(std::chrono::milliseconds(5));
+            }
+        }
+    }
+}
+
+void file_thrd(std::queue<std::tuple<const std::vector<std::string>*, std::chrono::time_point<std::chrono::system_clock>, int>>& file_queue,
+               std::mutex& file_mutex){
+    //??? а что если мы батц и закрыли прогу?
+    while (true){
+        if (file_queue.empty()){
+            std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        } else {
+            Utils::save_to_file(std::get<0>(file_queue.front()), std::get<1>(file_queue.front()), std::get<2>(file_queue.front()));
+            if (file_mutex.try_lock()){
+
+                file_queue.pop();
+                file_mutex.unlock();
+            } else {
+                std::this_thread::sleep_for(std::chrono::milliseconds(5));
+            }
+        }
+    }
+}
+
+void file1_thrd(){
+    file_thrd(file1_queue, file1_mutex);
+}
+
+void file2_thrd(){
+    file_thrd(file2_queue, file2_mutex);
+}
+
+//async write log
+void log_writer(const std::vector<std::string> *pVector) {
+    std::lock_guard<std::mutex> guard{log_mutex};
+    log_queue.push(pVector);
+}
+
+void push_to_file(std::queue<std::tuple<const std::vector<std::string>*, std::chrono::time_point<std::chrono::system_clock>, int>>& file_queue, std::mutex& file_mutex,
+                  const std::vector<std::string> *pVector, int file_number, std::chrono::time_point<std::chrono::system_clock> time){
+    std::lock_guard<std::mutex> guard{file_mutex};
+    file_queue.push(std::make_tuple(pVector, time, file_number));
+}
+
+//async write text
+void file_writer(int file_number, const std::vector<std::string> *pVector, std::chrono::time_point<std::chrono::system_clock> time){
+    //тут я решила не лочить переменную ибо типа размер вектора больше как ориентир и нам не нужно точное значение
+    if (file1_queue.size() < file2_queue.size() || ( (file1_queue.size() == file2_queue.size()) && file_number%2==1 ) ) {
+        push_to_file(file2_queue, file2_mutex, pVector, file_number, time);
+    } else {
+        push_to_file(file1_queue, file1_mutex, pVector, file_number, time);
+    }
+}
+
 
 int main(int argc, char* argv[]) {
 
@@ -23,8 +103,14 @@ int main(int argc, char* argv[]) {
     int count_start_breakets = 0;
     bool dynamik_need_to_stop = false;
 
+    std::thread log_thread(&log_thrd);
+    std::thread file1_thread(&file1_thrd);
+    std::thread file2_thread(&file2_thrd);
+
     std::string current_line;
     std::chrono::time_point<std::chrono::system_clock> start_time_millisec = std::chrono::system_clock::now();
+
+    int numbe = 0;
     while (std::getline(std::cin, current_line)){
 
         if (Utils::trim(current_line)=="{"){
@@ -44,9 +130,9 @@ int main(int argc, char* argv[]) {
             }
             commands_vector.push_back(current_line);
             if ((commands_vector.size() == N) || (is_dynamik_started && dynamik_need_to_stop)) {
-
-                Utils::save_to_file(&commands_vector, start_time_millisec);
-                Utils::print_commands(&commands_vector);
+                std::vector<std::string> fin_commands_vector(std::move(commands_vector));
+                log_writer(&fin_commands_vector);
+                file_writer(numbe, &fin_commands_vector, start_time_millisec);
                 commands_vector.clear();
                 if (is_dynamik_started){
                     is_dynamik_started = false;
