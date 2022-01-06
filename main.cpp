@@ -4,6 +4,7 @@
 
 #include <mutex>
 #include <queue>
+#include <thread>
 
 std::queue<const std::vector<std::string>*> log_queue;
 std::queue<std::tuple<const std::vector<std::string>*, std::chrono::time_point<std::chrono::system_clock>, int>> file1_queue;
