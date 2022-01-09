@@ -10,7 +10,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
 set(THREADS_PREFER_PTHREAD_FLAG TRUE)
 find_package(Threads REQUIRED)
-add_executable(bulk main.cpp Utils.cpp Utils.h)
+add_executable(bulk main.cpp proccom.cpp proccom.h)
 
 target_link_libraries(bulk
         ${CMAKE_THREAD_LIBS_INIT}
