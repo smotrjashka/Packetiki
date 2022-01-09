@@ -1,5 +1,5 @@
-#ifndef BULK_UTILS_H
-#define BULK_UTILS_H
+#ifndef UTILS_H
+#define UTILS_H
 
 #include <vector>
 #include <string>
@@ -16,4 +16,4 @@ namespace Utils {
 };
 
 
-#endif //BULK_UTILS_H
+#endif //UTILS_H

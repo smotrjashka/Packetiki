@@ -1,5 +1,5 @@
 #include <iostream>
-#include "Utils.h"
+#include "utils.h"
 #include <fstream>
 
 void Utils::print_commands(const std::vector<std::string> *pVector, std::ostream& strm ) {
