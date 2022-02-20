@@ -1,8 +1,9 @@
 #include <iostream>
 #include "proccom.h"
 #include <fstream>
+#include <memory>
 
-void Utils::print_commands(const std::vector<std::string>* pVector, std::ostream& strm) {
+void Utils::print_commands(const std::shared_ptr<std::vector<std::string>> pVector, std::ostream& strm) {
 
     strm << "bulk:";
     for (std::string command : (*pVector)) {
@@ -13,8 +14,7 @@ void Utils::print_commands(const std::vector<std::string>* pVector, std::ostream
     strm << std::endl;
 }
 
-//в качестве постфикса взяла номерочек файлика
-void Utils::save_to_file(const std::vector<std::string>* pVector,
+void Utils::save_to_file(const std::shared_ptr<std::vector<std::string>> pVector,
     std::chrono::time_point<std::chrono::system_clock> time_point_start, int postfix) {
     
     auto start_ms = std::chrono::time_point_cast<std::chrono::milliseconds>(time_point_start);
