@@ -1,5 +1,8 @@
 #pragma once
 
+#include <queue>
+#include <tuple>
+
 namespace thread_handler {
 
 	void log_thrd();
