@@ -2,6 +2,7 @@
 
 #include <queue>
 #include <tuple>
+#include <memory>
 
 namespace thread_handler {
 
